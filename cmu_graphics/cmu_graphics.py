@@ -5,7 +5,7 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = 'hide'
 
 from cmu_graphics.shape_logic import TRANSLATED_KEY_NAMES, _ShapeMetaclass
 from cmu_graphics import shape_logic
-
+import pygame
 
 class Signal:
     def __init__(self):
@@ -658,12 +658,15 @@ class App(object):
             kwargs = dict()
 
         fnName, language = self.getFnNameAndLanguage(baseFnName, useActiveScreen)
+        
         if fnName is None:
             return
 
         fn = self.userGlobals[fnName]
+        
         args, kwargs = self.getEventHandlerArgs(baseFnName, language, fn, args, kwargs)
 
+       
         fn(*args, **kwargs)
 
         if redraw and self._isMvc and baseFnName != 'redrawAll':
@@ -694,6 +697,7 @@ class App(object):
             pygame.K_INSERT: 'insert',
             pygame.K_END: 'end',
             pygame.K_PAGEUP: 'pageup',
+            pygame.K_PAGEDOWN: 'pagedown',
             pygame.K_HOME: 'home'
         }
 
@@ -797,7 +801,9 @@ class App(object):
     def handleKeyRelease(self, keyCode, modifierMask):
         self._modifiers = self.getModifiers(modifierMask)
         key = App.getKey(keyCode, modifierMask)
-
+        
+      
+        
         if key is None:
             return
         if key == 'ctrl':
@@ -1085,7 +1091,7 @@ class App(object):
     def run(self):
         pygame.init()
         pygame.display.set_caption(self.title)
-
+        true_count = 0
         self._screen = None
         self.updateScreen(True)
 
@@ -1120,8 +1126,23 @@ class App(object):
                                 )
                         elif event.type == pygame.KEYDOWN:
                             self.handleKeyPress(event.key, event.mod)
+
+                        
+                            
+
+                            if (event.key != pygame.K_LSHIFT) and (event.key != pygame.K_RSHIFT):
+                                        
+                                        true_count += 1
+                                
+
+
+                             
                         elif event.type == pygame.KEYUP:
                             self.handleKeyRelease(event.key, event.mod)
+
+                            if (event.key != pygame.K_LSHIFT) and (event.key != pygame.K_RSHIFT):
+                                true_count -= 1
+
                         elif event.type == SET_ACTIVE_SCREEN:
                             self.handleSetActiveScreen(event.newScreen)
                         elif event.type == pygame.WINDOWSIZECHANGED:
@@ -1144,11 +1165,25 @@ class App(object):
                     lastTick = pygame.time.get_ticks()
                     if not (self.paused or self.stopped):
                         self.callUserFn('onStep', ())
-                        if len(self._allKeysDown) > 0:
+
+                        if len(self._allKeysDown) > 0 and true_count == len(self._allKeysDown):
+
+                            
+
+                            print("KeyHoldCalled", len(self._allKeysDown), self._allKeysDown, true_count)
+                            
+
                             self.callUserFn(
                                 'onKeyHold',
                                 (list(self._allKeysDown), list(self._modifiers)),
                             )
+
+                        else: 
+
+                            self._allKeysDown = set()
+
+
+
                         onStepEvent.send_robust(self.callUserFn, self._wrapper)
                         should_redraw = True
 
@@ -1365,6 +1400,7 @@ def onSteps(n):
 @eventHandlerRepeater
 def onKeyHolds(keys, n):
     assert isinstance(keys, list), t('keys must be a list')
+    
     for _ in range(n):
         app._app.callUserFn('onKeyHold', (keys, []))
 
@@ -1457,6 +1493,7 @@ import json
 import subprocess
 from cmu_graphics.libs import webrequest
 import __main__
+
 
 
 UPDATE_CONFIG_FILE_PATH = os.path.join(
@@ -1610,6 +1647,8 @@ def check_for_exit_without_run():
         print(
             ' ** To run your animation, add cmu_graphics.run() to the bottom of your file **\n'
         )
+
+
 
 
 app = None
