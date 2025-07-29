@@ -5,7 +5,7 @@
 
 
 
-AKU32 System 32
+AKU32 System 32(Final Project for 15112)
 
 A comprehensive 32-bit CPU emulator with assembly language support, visual memory management, and interactive programming environment built with Python and CMU Graphics.
 Features
